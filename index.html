@@ -168,7 +168,8 @@
 <script type="importmap">
 {
   "imports": {
-    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.29.0"
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.29.0",
+    "marked": "https://aistudiocdn.com/marked@^17.0.0"
   }
 }
 </script>
@@ -216,15 +217,26 @@
   </footer>
 
   <!-- API Key Modal -->
-  <div id="api-key-modal" class="fixed inset-0 bg-black/80 backdrop-blur-lg flex items-center justify-center z-50" role="dialog" aria-modal="true" aria-labelledby="api-key-modal-title">
+  <div id="api-key-modal" class="fixed inset-0 bg-black/80 backdrop-blur-lg flex items-center justify-center z-50 hidden" role="dialog" aria-modal="true" aria-labelledby="api-key-modal-title">
     <div class="glass-effect rounded-lg p-8 w-full max-w-md m-4 text-center">
-        <h2 id="api-key-modal-title" class="text-2xl font-bold mb-4 text-white">انتخاب کلید API</h2>
+        <h2 id="api-key-modal-title" class="text-2xl font-bold mb-4 text-white">نیاز به کلید API</h2>
         <p class="text-secondary-text mb-6">
-            برای استفاده از تمام قابلیت‌های پیشرفته برنامه، مانند مکالمه زنده، نیاز به یک کلید API معتبر دارید. لطفاً کلید خود را انتخاب کنید.
+            برای استفاده از دستیار هوشمند، نیاز به یک کلید API معتبر دارید.
         </p>
-        <button id="select-api-key-btn" class="w-full px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-semibold text-lg">
+
+        <!-- Manual API Key Input (Fallback) -->
+        <div id="api-key-input-container" class="hidden">
+            <input type="password" id="api-key-input" class="w-full bg-gray-800 border border-gray-700 rounded-lg p-3 mb-4 text-center focus:outline-none focus:ring-2 focus:ring-white/50 text-white" placeholder="کلید API خود را اینجا وارد کنید">
+            <button id="save-api-key-btn" class="w-full px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-semibold text-lg">
+                ذخیره و ادامه
+            </button>
+        </div>
+
+        <!-- Aistudio Button (Primary) -->
+        <button id="select-api-key-btn" class="hidden w-full px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-semibold text-lg">
             انتخاب کلید
         </button>
+
          <p class="text-xs text-gray-500 mt-4">
             مطمئن شوید که Gemini API برای پروژه شما فعال است. 
             <a href="https://ai.google.dev/gemini-api/docs/billing" target="_blank" rel="noopener" class="text-blue-400 hover:underline">راهنمای فعال‌سازی</a>
