@@ -629,19 +629,20 @@ async function initializeApp() {
     updateUiForState(); // Sets initial disabled state
 
     try {
-        if (!process.env.API_KEY) {
-            throw new Error("API key is not configured.");
-        }
+        // Initialize the client. The constructor itself doesn't make a network request,
+        // so it won't fail here if the key is missing.
         ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         
-        // A test call to ensure the key is valid and the service is reachable.
-        await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: 'test' });
-
-        updateUiForState(); // Re-run to enable UI elements
+        // Now that `ai` is an object, the UI can be enabled.
+        updateUiForState();
+        
+        // The initial greeting will now make the first API call. 
+        // It has its own try/catch, so it will gracefully show an error in the chat
+        // if the API key is missing or invalid, instead of crashing the whole app.
         startInitialGreeting();
     } catch (error) {
         console.error("Failed to initialize GoogleGenAI:", error);
-        // The UI is already disabled. We just need to show an error message.
+        // This catch block is for unexpected errors during client initialization.
         dom.chatInput.placeholder = 'اتصال برقرار نشد.';
         appendMessage('متاسفانه در اتصال به سرویس مشکلی پیش آمده. لطفاً صفحه را رفرش کنید.', 'model');
     }
