@@ -65,6 +65,8 @@ const dom = {
   stopStreamBtn: document.getElementById('stop-stream-btn') as HTMLButtonElement,
   videoCanvas: document.getElementById('video-canvas') as HTMLCanvasElement,
   shenFooter: document.querySelector('.shen-footer a') as HTMLAnchorElement,
+  apiKeyModal: document.getElementById('api-key-modal') as HTMLDivElement,
+  selectApiKeyBtn: document.getElementById('select-api-key-btn') as HTMLButtonElement,
 };
 
 // --- HELPER FUNCTIONS ---
@@ -232,7 +234,7 @@ function updateUiForState() {
 
     // --- Update placeholder ---
     if (!isReady) {
-        dom.chatInput.placeholder = 'در حال آماده‌سازی دستیار...';
+        dom.chatInput.placeholder = 'لطفاً کلید API را انتخاب کنید...';
     } else {
         dom.chatInput.placeholder = 'پیام خود را بنویسید...';
     }
@@ -598,6 +600,15 @@ function setupEventListeners() {
     dom.sosAudioBtn.addEventListener('click', () => { toggleSosModal(false); startLiveSession(true, false); });
     dom.sosStreamBtn.addEventListener('click', () => { toggleSosModal(false); startLiveSession(true, true); });
     dom.stopStreamBtn.addEventListener('click', () => { stopLiveSession(); });
+
+    dom.selectApiKeyBtn.addEventListener('click', async () => {
+        try {
+            await (window as any).aistudio.openSelectKey();
+            await proceedToApp();
+        } catch (e) {
+            console.error("Error during API key selection:", e);
+        }
+    });
 }
 
 // --- INITIALIZATION ---
@@ -622,24 +633,37 @@ async function startInitialGreeting() {
         setProcessing(false);
     }
 }
-async function initializeApp() {
-    setupEventListeners();
-    updateUiForState(); // Sets initial disabled state
 
+async function checkApiKey() {
     try {
-        // Initialize the client. The constructor itself doesn't make a network request,
-        // so it won't fail here if the key is missing.
+        if (await (window as any).aistudio.hasSelectedApiKey()) {
+            await proceedToApp();
+        } else {
+            dom.apiKeyModal.classList.remove('hidden');
+        }
+    } catch (e) {
+        console.error("API key check failed, showing modal as fallback.", e);
+        dom.apiKeyModal.classList.remove('hidden');
+    }
+}
+
+async function proceedToApp() {
+    dom.apiKeyModal.classList.add('hidden');
+    try {
         ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-        
-        // Now that `ai` is an object, the UI can be enabled.
         updateUiForState();
-        
-        // The initial greeting will now make the first API call. 
-        // It has its own try/catch, so it will gracefully show an error in the chat
-        // if the API key is missing or invalid, instead of crashing the whole app.
-        startInitialGreeting();
+        await startInitialGreeting();
     } catch (error) {
         console.error("Failed to initialize GoogleGenAI:", error);
-        // This catch block is for unexpected errors during client initialization.
         dom.chatInput.placeholder = 'اتصال برقرار نشد.';
-        appendMessage('متاسفانه در اتصال به سرویس مشکلی پیش آمده. لطفاً صفحه را
+        appendMessage('متاسفانه در اتصال به سرویس مشکلی پیش آمده. لطفاً صفحه را رفرش کنید.', 'model');
+    }
+}
+
+async function initializeApp() {
+    setupEventListeners();
+    updateUiForState(); // Sets initial locked state
+    await checkApiKey();
+}
+
+initializeApp();
