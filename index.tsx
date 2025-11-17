@@ -43,7 +43,6 @@ let isFirstInteraction = true;
 const dom = {
   chatHistory: document.getElementById('chat-history') as HTMLDivElement,
   mainActionBtn: document.getElementById('main-action-btn') as HTMLButtonElement,
-  sendTextBtn: document.getElementById('send-text-btn') as HTMLButtonElement,
   profileBtn: document.getElementById('profile-btn') as HTMLButtonElement,
   profileModal: document.getElementById('profile-modal') as HTMLDivElement,
   petNameInput: document.getElementById('pet-name') as HTMLInputElement,
@@ -184,73 +183,68 @@ function finalizeLastMessage() {
 }
 
 // --- UI LOGIC ---
-function updateFooterButtons() {
-    const hasText = dom.chatInput.value.trim() !== '';
-    const hasImage = uploadedImageBase64 !== null;
-
-    if (isAgentActive || isProcessing) return;
-
-    if (hasText || hasImage) {
-        dom.mainActionBtn.classList.add('hidden');
-        dom.sendTextBtn.classList.remove('hidden');
-    } else {
-        dom.mainActionBtn.classList.remove('hidden');
-        dom.sendTextBtn.classList.add('hidden');
-    }
-}
-
 function updateUiForState() {
     const mainIcon = dom.mainActionBtn.querySelector('i');
-    const sendIcon = dom.sendTextBtn.querySelector('i');
-    if (!mainIcon || !sendIcon) return;
+    if (!mainIcon) return;
 
     const isReady = !!ai;
     const isBusy = isProcessing || isAgentActive;
+    const hasText = dom.chatInput.value.trim() !== '';
+    const hasImage = uploadedImageBase64 !== null;
 
     // --- Disable elements based on state ---
     dom.chatInput.disabled = isBusy || !isReady;
-    dom.mainActionBtn.disabled = isProcessing || !isReady;
-    dom.sendTextBtn.disabled = isBusy || !isReady;
+    dom.mainActionBtn.disabled = isBusy || !isReady;
     dom.profileBtn.disabled = isBusy || !isReady;
     dom.headerSosBtn.disabled = isBusy || !isReady;
 
+    // --- Update button icon, color, and label ---
+    dom.mainActionBtn.classList.remove('listening');
+    dom.mainActionBtn.classList.remove('from-gray-600', 'to-gray-900', 'from-emerald-600', 'to-green-900');
 
-    // --- Update placeholders and icons ---
     if (!isReady) {
         mainIcon.className = 'fa-solid fa-lock';
+        dom.mainActionBtn.setAttribute('aria-label', 'در حال بارگذاری');
+        dom.mainActionBtn.classList.add('from-gray-600', 'to-gray-900');
         dom.chatInput.placeholder = 'در حال آماده‌سازی دستیار...';
-        updateFooterButtons();
-        return;
-    }
-     dom.chatInput.placeholder = 'پیام خود را بنویسید...';
-
-    // Reset icons first
-    mainIcon.className = 'fa-solid fa-microphone';
-    sendIcon.className = 'fa-solid fa-paper-plane';
-    dom.mainActionBtn.classList.remove('listening');
-
-    if (isProcessing) {
-        // Only the visible button should spin
-        if (dom.mainActionBtn.classList.contains('hidden')) {
-            sendIcon.className = 'fa fa-spinner fa-spin';
+    } else if (isProcessing) {
+        mainIcon.className = 'fa fa-spinner fa-spin';
+        dom.mainActionBtn.setAttribute('aria-label', 'در حال پردازش');
+        // Keep previous color during processing
+        if (hasText || hasImage) {
+            dom.mainActionBtn.classList.add('from-emerald-600', 'to-green-900');
         } else {
-            mainIcon.className = 'fa fa-spinner fa-spin';
+            dom.mainActionBtn.classList.add('from-gray-600', 'to-gray-900');
         }
     } else if (isAgentActive) {
         mainIcon.className = 'fa-solid fa-bone';
-        dom.mainActionBtn.classList.add('listening');
+        dom.mainActionBtn.setAttribute('aria-label', 'پایان مکالمه');
+        dom.mainActionBtn.classList.add('listening', 'from-gray-600', 'to-gray-900');
+    } else if (hasText || hasImage) {
+        mainIcon.className = 'fa fa-paper-plane';
+        dom.mainActionBtn.setAttribute('aria-label', 'ارسال پیام');
+        dom.mainActionBtn.classList.add('from-emerald-600', 'to-green-900');
+    } else { // Default state: ready, not busy, no text
+        mainIcon.className = 'fa-solid fa-microphone';
+        dom.mainActionBtn.setAttribute('aria-label', 'شروع مکالمه صوتی');
+        dom.mainActionBtn.classList.add('from-gray-600', 'to-gray-900');
     }
 
-    // --- Update body class ---
+    // --- Update placeholder ---
+    if (!isReady) {
+        dom.chatInput.placeholder = 'در حال آماده‌سازی دستیار...';
+    } else {
+        dom.chatInput.placeholder = 'پیام خود را بنویسید...';
+    }
+
+    // --- Update body class for visual feedback ---
     if (isAgentActive || isProcessing) {
          document.body.classList.add('chat-active');
     } else {
          document.body.classList.remove('chat-active');
     }
-
-    // --- Update button visibility ---
-    updateFooterButtons();
 }
+
 
 function toggleProfileModal(show: boolean) {
     dom.profileModal.classList.toggle('hidden', !show);
@@ -308,7 +302,7 @@ async function processUserMessage(messageText: string, imageBase64: string | nul
         uploadedImageBase64 = null;
         dom.uploadLabel.classList.remove('text-green-400');
     }
-    updateFooterButtons();
+    updateUiForState();
 
     setProcessing(true);
     appendMessage(userMessageContent, 'user', false, imageToSend ? `data:image/jpeg;base64,${imageToSend}` : null);
@@ -542,28 +536,32 @@ function stopLiveSession() {
 
 // --- EVENT LISTENERS ---
 function setupEventListeners() {
-    dom.sendTextBtn.addEventListener('click', () => {
-        if (dom.sendTextBtn.classList.contains('hidden')) return;
-        const message = dom.chatInput.value;
-        processUserMessage(message, uploadedImageBase64);
-        dom.chatInput.value = '';
-    });
-
     dom.mainActionBtn.addEventListener('click', () => {
+        if (dom.mainActionBtn.disabled) return;
+
+        const hasText = dom.chatInput.value.trim() !== '';
+        const hasImage = uploadedImageBase64 !== null;
+
         if (isAgentActive) {
             stopLiveSession();
+        } else if (hasText || hasImage) {
+            const message = dom.chatInput.value;
+            processUserMessage(message, uploadedImageBase64);
+            dom.chatInput.value = '';
         } else {
             startLiveSession(false, false);
         }
     });
 
-    dom.chatInput.addEventListener('input', updateFooterButtons);
+    dom.chatInput.addEventListener('input', updateUiForState);
     
     dom.chatInput.addEventListener('keypress', (e) => {
         if (e.key === 'Enter' && !e.shiftKey) { 
             e.preventDefault(); 
-            if (!dom.sendTextBtn.classList.contains('hidden')) {
-                dom.sendTextBtn.click();
+            const hasText = dom.chatInput.value.trim() !== '';
+            const hasImage = uploadedImageBase64 !== null;
+            if (hasText || hasImage) {
+                 dom.mainActionBtn.click();
             }
         }
     });
@@ -589,7 +587,7 @@ function setupEventListeners() {
             reader.onloadend = () => {
                 uploadedImageBase64 = (reader.result as string).split(',')[1];
                 dom.uploadLabel.classList.add('text-green-400');
-                updateFooterButtons();
+                updateUiForState();
             };
             reader.readAsDataURL(file);
         }
@@ -644,7 +642,4 @@ async function initializeApp() {
         console.error("Failed to initialize GoogleGenAI:", error);
         // This catch block is for unexpected errors during client initialization.
         dom.chatInput.placeholder = 'اتصال برقرار نشد.';
-        appendMessage('متاسفانه در اتصال به سرویس مشکلی پیش آمده. لطفاً صفحه را رفرش کنید.', 'model');
-    }
-}
-initializeApp();
+        appendMessage('متاسفانه در اتصال به سرویس مشکلی پیش آمده. لطفاً صفحه را

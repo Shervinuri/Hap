@@ -94,10 +94,10 @@
         0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; }
       }
 
-      #main-action-btn:active, #send-text-btn:active {
+      #main-action-btn:active {
         transform: scale(0.95);
       }
-      #main-action-btn:disabled, #send-text-btn:disabled {
+      #main-action-btn:disabled {
         cursor: not-allowed;
         background: #4a5568;
       }
@@ -205,14 +205,9 @@
                 <input type="file" id="image-upload" class="hidden" accept="image/*">
             </label>
             <input type="text" id="chat-input" placeholder="پیام خود را بنویسید..." class="flex-grow bg-transparent border-none focus:outline-none text-white placeholder-gray-400">
-            <div class="relative flex-shrink-0 w-14 h-14">
-              <button id="send-text-btn" aria-label="ارسال پیام" class="absolute inset-0 w-full h-full bg-gradient-to-br from-emerald-600 to-green-900 rounded-full flex items-center justify-center text-white text-2xl transition-all duration-300 transform hover:scale-105 hidden">
-                  <i class="fa fa-paper-plane"></i>
-              </button>
-              <button id="main-action-btn" aria-label="شروع مکالمه صوتی" class="absolute inset-0 w-full h-full bg-gradient-to-br from-gray-600 to-gray-900 rounded-full flex items-center justify-center text-white text-2xl transition-all duration-300 transform hover:scale-105">
-                  <i class="fa-solid fa-microphone"></i>
-              </button>
-            </div>
+            <button id="main-action-btn" aria-label="شروع مکالمه صوتی" class="flex-shrink-0 w-14 h-14 bg-gradient-to-br from-gray-600 to-gray-900 rounded-full flex items-center justify-center text-white text-2xl transition-all duration-300 transform hover:scale-105">
+                <i class="fa-solid fa-microphone"></i>
+            </button>
         </div>
         <div class="shen-footer text-center text-xs mt-3">
             <a href="https://t.me/shervini" target="_blank" rel="noopener noreferrer">Exclusive SHΞN™ made</a>
